@@ -101,6 +101,9 @@ import java.util.concurrent.Executor;
 // Methods are delegated to the provider implementation: all public API methods introduced in this
 // file are fully delegated, whereas public and protected methods from the View base classes are
 // only delegated where a specific need exists for them to do so.
+// WebView是一个很少API类，它将其公共API委托给后端WebViewProvider类实例。
+// WebView为实现向后兼容继承了{@link AbsoluteLayout}，方法委托给provider实现，所有的公共Api方法。
+// 此文件中引入的所有公共API方法都是完全委托的，而视图基类中的公共和受保护方法仅在存在特定需要时才被委托。
 @Widget
 public class WebView extends AbsoluteLayout
         implements ViewTreeObserver.OnGlobalFocusChangeListener,
@@ -111,11 +114,13 @@ public class WebView extends AbsoluteLayout
     // Throwing an exception for incorrect thread usage if the
     // build target is JB MR2 or newer. Defaults to false, and is
     // set in the WebView constructor.
+    // 如果编译为3.3或更新则默认为false。3.3以后替换为chorme内核
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     private static volatile boolean sEnforceThreadChecking = false;
 
     /**
      *  Transportation object for returning WebView across thread boundaries.
+     *   用于跨线程返回WebView的传输对象。
      */
     public class WebViewTransport {
         private WebView mWebview;
@@ -159,14 +164,16 @@ public class WebView extends AbsoluteLayout
     public interface FindListener {
         /**
          * Notifies the listener about progress made by a find operation.
+         * 监听查找操作的进度
          *
-         * @param activeMatchOrdinal the zero-based ordinal of the currently selected match
-         * @param numberOfMatches how many matches have been found
+         * @param activeMatchOrdinal the zero-based ordinal of the currently selected match 匹配项的下标从0开始
+         * @param numberOfMatches how many matches have been found  匹配项数量
          * @param isDoneCounting whether the find operation has actually completed. The listener
          *                       may be notified multiple times while the
          *                       operation is underway, and the numberOfMatches
          *                       value should not be considered final unless
          *                       isDoneCounting is {@code true}.
+         * 查找操作是否完成，监听会被多次触发，除非isDoneCounting为{@code true}，否则numberOfMatches值不应被视为最终值。
          */
         public void onFindResultReceived(int activeMatchOrdinal, int numberOfMatches,
             boolean isDoneCounting);
@@ -175,9 +182,11 @@ public class WebView extends AbsoluteLayout
     /**
      * Callback interface supplied to {@link #postVisualStateCallback} for receiving
      * notifications about the visual state.
+     * 监听可视状态的通知回调
      */
     public static abstract class VisualStateCallback {
         /**
+         * 当可视状态准备在下一个{@link#onDraw}中绘制时调用。
          * Invoked when the visual state is ready to be drawn in the next {@link #onDraw}.
          *
          * @param requestId The identifier passed to {@link #postVisualStateCallback} when this
@@ -188,15 +197,15 @@ public class WebView extends AbsoluteLayout
 
     /**
      * Interface to listen for new pictures as they change.
-     *
-     * @deprecated This interface is now obsolete.
+     * 监听新的图片发生改变
+     * @deprecated This interface is now obsolete.  过时方法
      */
     @Deprecated
     public interface PictureListener {
         /**
          * Used to provide notification that the WebView's picture has changed.
          * See {@link WebView#capturePicture} for details of the picture.
-         *
+         *  //监听webview的图片发生改变的监听
          * @param view the WebView that owns the picture
          * @param picture the new picture. Applications targeting
          *     {@link android.os.Build.VERSION_CODES#JELLY_BEAN_MR2} or above
@@ -206,7 +215,7 @@ public class WebView extends AbsoluteLayout
         @Deprecated
         void onNewPicture(WebView view, @Nullable Picture picture);
     }
-
+     //命中测试结果类
     public static class HitTestResult {
         /**
          * Default HitTestResult, where the target is unknown.
@@ -303,10 +312,14 @@ public class WebView extends AbsoluteLayout
 
     /**
      * Constructs a new WebView with an Activity Context object.
-     *
+     * 
      * <p class="note"><b>Note:</b> WebView should always be instantiated with an Activity Context.
      * If instantiated with an Application Context, WebView will be unable to provide several
      * features, such as JavaScript dialogs and autofill.
+     *
+     * WebView应该总是用Activity的Context实例化。
+     * 如果用Application的Context实例化，
+     * WebView将无法提供一些功能，例如JavaScript对话框和自动填充的功能。
      *
      * @param context an Activity Context to access application assets
      */
@@ -395,6 +408,7 @@ public class WebView extends AbsoluteLayout
      *                        private mode
      * @hide This is used internally by dumprendertree, as it requires the JavaScript interfaces to
      *       be added synchronously, before a subsequent loadUrl call takes effect.
+     * 转储渲染树内部使用，在后续loadUrl调用生效之前同步添加JavaScript接口。    
      */
     @UnsupportedAppUsage
     protected WebView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr,
@@ -413,9 +427,11 @@ public class WebView extends AbsoluteLayout
         super(context, attrs, defStyleAttr, defStyleRes);
 
         // WebView is important by default, unless app developer overrode attribute.
+        // 默认属性，除非app开发者重写该属性
         if (getImportantForAutofill() == IMPORTANT_FOR_AUTOFILL_AUTO) {
             setImportantForAutofill(IMPORTANT_FOR_AUTOFILL_YES);
         }
+        //内容快照
         if (getImportantForContentCapture() == IMPORTANT_FOR_CONTENT_CAPTURE_AUTO) {
             setImportantForContentCapture(IMPORTANT_FOR_CONTENT_CAPTURE_YES);
         }
@@ -427,13 +443,17 @@ public class WebView extends AbsoluteLayout
             throw new RuntimeException(
                 "WebView cannot be initialized on a thread that has no Looper.");
         }
+        //判断当前版本是否大于等于3.3
         sEnforceThreadChecking = context.getApplicationInfo().targetSdkVersion >=
                 Build.VERSION_CODES.JELLY_BEAN_MR2;
+        //校验webview在主线程，且确保webview的操作在同一个主线程中。
         checkThread();
-
+        //通过WebViewFactoryProvider工厂方法简单的创建一个Provider对象
         ensureProviderCreated();
+        //为WebviewProvider初始化
         mProvider.init(javaScriptInterfaces, privateBrowsing);
         // Post condition of creating a webview is the CookieSyncManager.getInstance() is allowed.
+        // 创建webview的Post条件是CookieSyncManager.getInstance（）是允许的。
         CookieSyncManager.setGetInstanceIsAllowed();
     }
 
@@ -495,6 +515,7 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
+     * 获取ssl证书 没有证书的站点是不安全的
      * Gets the SSL certificate for the main top-level page or {@code null} if there is
      * no certificate (the site is not secure).
      *
@@ -523,6 +544,7 @@ public class WebView extends AbsoluteLayout
     //-------------------------------------------------------------------------
 
     /**
+     * 保存host和账号密码方便自动填充表单。请注意，这与用于HTTP身份验证的凭据无关。
      * Sets a username and password pair for the specified host. This data is
      * used by the WebView to autocomplete username and password fields in web
      * forms. Note that this is unrelated to the credentials used for HTTP
@@ -544,7 +566,7 @@ public class WebView extends AbsoluteLayout
     /**
      * Stores HTTP authentication credentials for a given host and realm to the {@link WebViewDatabase}
      * instance.
-     *
+     * 将给定主机和域的HTTP身份验证凭据存储到{@link WebViewDatabase}
      * @param host the host to which the credentials apply
      * @param realm the realm to which the credentials apply
      * @param username the username
@@ -561,6 +583,7 @@ public class WebView extends AbsoluteLayout
     /**
      * Retrieves HTTP authentication credentials for a given host and realm from the {@link
      * WebViewDatabase} instance.
+     * 从{@link WebViewDatabase}实例检索给定主机和域的HTTP身份验证凭据。
      * @param host the host to which the credentials apply
      * @param realm the realm to which the credentials apply
      * @return the credentials as a String array, if found. The first element
@@ -579,6 +602,7 @@ public class WebView extends AbsoluteLayout
      * Destroys the internal state of this WebView. This method should be called
      * after this WebView has been removed from the view system. No other
      * methods may be called on this WebView after destroy.
+     * 销毁此WebView的内部状态。从视图系统中删除此WebView后，应调用此方法。销毁后不能在此WebView上调用其他方法。
      */
     public void destroy() {
         checkThread();
@@ -613,7 +637,7 @@ public class WebView extends AbsoluteLayout
 
     /**
      * Used only by internal tests to free up memory.
-     *
+     * 仅用于内部测试以释放内存。
      * @hide
      */
     @UnsupportedAppUsage
@@ -625,6 +649,8 @@ public class WebView extends AbsoluteLayout
      * Informs WebView of the network state. This is used to set
      * the JavaScript property window.navigator.isOnline and
      * generates the online/offline event as specified in HTML5, sec. 5.7.7
+     *
+     * TODO 通知WebView网络状态。这是用来设置JavaScript属性window.navigator.isOnline和生成HTML5中指定的在线/离线事件。5.7.7 
      *
      * @param networkUp a boolean indicating if network is available
      */
@@ -639,6 +665,9 @@ public class WebView extends AbsoluteLayout
      * method no longer stores the display data for this WebView. The previous
      * behavior could potentially leak files if {@link #restoreState} was never
      * called.
+     * 保存WebView的状态用于{@link android.app.Activity#onSaveInstanceState}
+     * 请记住这个方法不再存储webview显示的数据。
+     * 如果{@link #restoreState}方法从未调用，那么上一个行为可能会泄漏文件
      *
      * @param outState the Bundle to store this WebView's state
      * @return the same copy of the back/forward list used to save the state, {@code null} if the
@@ -694,6 +723,11 @@ public class WebView extends AbsoluteLayout
      * side-effects. Please note that this method no longer restores the
      * display data for this WebView.
      *
+     * 从Bundle中重置Webview的状态
+     * 这个方法可以在{@link android.app.Activity#onRestoreInstanceState}调用来恢复Webview的状态
+     * 如果在webview改变build 状态（加载页面，或创建后退/前进列表等）的时候调用，会产生不良的副作用
+     * 请注意这个方法不再显示恢复此webview的战术的数据。
+     *
      * @param inState the incoming Bundle of state
      * @return the restored back/forward list or {@code null} if restoreState failed
      */
@@ -715,6 +749,9 @@ public class WebView extends AbsoluteLayout
      *            that are set by default by this WebView, such as those
      *            controlling caching, accept types or the User-Agent, their
      *            values may be overridden by this WebView's defaults.
+     * 
+     *  additionalHttpHeaders 设置Http请求url的请求头的映射。注意如果map包含一些webview默认设置（例如controlling caching，accept types， User-Agent）
+     *  它们的值将会被Webview的默认值重写
      */
     public void loadUrl(@NonNull String url, @NonNull Map<String, String> additionalHttpHeaders) {
         checkThread();
@@ -734,9 +771,13 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
+     * 
      * Loads the URL with postData using "POST" method into this WebView. If url
      * is not a network URL, it will be loaded with {@link #loadUrl(String)}
      * instead, ignoring the postData param.
+     *
+     * 通过POST方式请求数据来加载URL到当前webview，如果地址不是一个网络Url，
+     * 它将调用 {@link #loadUrl(String)}来替代，并忽略PostData的参数
      *
      * @param url the URL of the resource to load
      * @param postData the data will be passed to "POST" request, which must be
@@ -753,6 +794,7 @@ public class WebView extends AbsoluteLayout
 
     /**
      * Loads the given data into this WebView using a 'data' scheme URL.
+     * 使用'data' scheme Url 来加载给定的数据到当前Webview
      * <p>
      * Note that JavaScript's same origin policy means that script running in a
      * page loaded using this method will be unable to access content loaded
@@ -760,7 +802,11 @@ public class WebView extends AbsoluteLayout
      * restriction, use {@link
      * #loadDataWithBaseURL(String,String,String,String,String)
      * loadDataWithBaseURL()} with an appropriate base URL.
+     * 请注意，JavaScript的同源策略意味着在使用此方法加载的页面中运行的脚本将无法访问使用“data”以外的任何方案加载的内容，包括“http（s）”。
+     * 要避免同源策略 使用{@link #loadDataWithBaseURL(String,String,String,String,String) loadDataWithBaseURL()} 调用一个适当的URL。
      * <p>
+     * {@code encoding} 参数 指定数据是base64的还是URL编码。如果数据是base64编码的，
+     * 那参数的值必须是"base64",HMTL可以用android.util.Base64#encodeToString(byte[],int)}来处理
      * The {@code encoding} parameter specifies whether the data is base64 or URL
      * encoded. If the data is base64 encoded, the value of the encoding
      * parameter must be {@code "base64"}. HTML can be encoded with {@link
@@ -780,10 +826,14 @@ public class WebView extends AbsoluteLayout
      * base64 or encode any {@code #} characters in the content as {@code %23}, otherwise they
      * will be treated as the end of the content and the remaining text used as a document
      * fragment identifier.
+     * 对于所有其他的{@code encoding}参数的值（包含null），假设数据对安全URL字符范围内的八位字节使用ASCII编码，
+     * 对该范围外的八位字节使用标准的%xx十六进制URL编码。可查看 <a href="https://tools.ietf.org/html/rfc3986#section-2.2">RFC 3986</a> 获得更多信息
+     * 应用标识在Android Q或之后，必须使用base64或将内容中的任何{@code}字符编码为{@code%23}，否则它们将被视为内容的结尾，其余文本将用作文档片段标识符。
      * <p>
      * The {@code mimeType} parameter specifies the format of the data.
      * If WebView can't handle the specified MIME type, it will download the data.
      * If {@code null}, defaults to 'text/html'.
+     * {@code mimeType}参数 指定了数据的格式。如果Webview无法处理指定的MIME type，它将下载数据。如果参数为null，则默认为'text/html'
      * <p>
      * The 'data' scheme URL formed by this method uses the default US-ASCII
      * charset. If you need to set a different charset, you should form a
@@ -792,6 +842,10 @@ public class WebView extends AbsoluteLayout
      * Note that the charset obtained from the mediatype portion of a data URL
      * always overrides that specified in the HTML or XML document itself.
      * <p>
+     * data参数scheme url 默认使用  US-ASCII charset，如果你需要设置不同的charset
+     * 你应该在使用的时候指定mediatype参数并调用{@link #loadUrl(String)}来替代这个方法
+     * 注意从data URL的mediatype部分获得的charset将重写Html和xml文档
+     *
      * Content loaded using this method will have a {@code window.origin} value
      * of {@code "null"}. This must not be considered to be a trusted origin
      * by the application or by any JavaScript code running inside the WebView
@@ -801,6 +855,11 @@ public class WebView extends AbsoluteLayout
      * should use {@link #loadDataWithBaseURL(String,String,String,String,String)
      * loadDataWithBaseURL()} with a valid HTTP or HTTPS base URL to set the
      * origin.
+     * 这个方法加载的时候默认{@code window.origin} 为null。
+     * Application和webview中运行的任何javaScript都是不可信的（例如：dom事件和web消息）
+     * 因为恶意的内容也可以创建origin为null 的帧
+     * 如果你想用可信的方式来标识origin。可以使用{@link #loadDataWithBaseURL(String,String,String,String,String)
+     * loadDataWithBaseURL()} 和有效的Http和Https的基础Url来设置origin
      *
      * @param data a String of data in the given encoding
      * @param mimeType the MIME type of the data, e.g. 'text/html'.
@@ -817,6 +876,8 @@ public class WebView extends AbsoluteLayout
      * the content. The base URL is used both to resolve relative URLs and when
      * applying JavaScript's same origin policy. The historyUrl is used for the
      * history entry.
+     * 使用baseUrl作为内容的基本URL，将给定的数据加载到此WebView中。base URL既用于解析相对URL，
+     * 也用于应用JavaScript的同源策略。historyUrl用于历史记录条目。
      * <p>
      * The {@code mimeType} parameter specifies the format of the data.
      * If WebView can't handle the specified MIME type, it will download the data.
