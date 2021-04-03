@@ -926,12 +926,17 @@ public class WebView extends AbsoluteLayout
      * If non-null, {@code resultCallback} will be invoked with any result returned from that
      * execution. This method must be called on the UI thread and the callback will
      * be made on the UI thread.
+     * 在当前展示页面的上下文中异步执行JavaScript。如果结果不为空，将把执行结果通过{@code resultCallback} 返回会爱，
+     * 这个方法必须在UI线程中调用，回调方法也将创建在UI线程中
      * <p>
      * Compatibility note. Applications targeting {@link android.os.Build.VERSION_CODES#N} or
      * later, JavaScript state from an empty WebView is no longer persisted across navigations like
      * {@link #loadUrl(String)}. For example, global variables and functions defined before calling
      * {@link #loadUrl(String)} will not exist in the loaded page. Applications should use
      * {@link #addJavascriptInterface} instead to persist JavaScript objects across navigations.
+     * 兼容性说明，应用在Android N或更高版本，一个空的Webview将不在导航栏中保存JavaScript的状态，例如 {@link #loadUrl(String)}. 
+     * 例如 调用 {@link #loadUrl(String)}方法前定义的全局变量和函数，将不存在已加载的页面
+     * 应用应该调用addJavascriptInterface方法而不是跨导航持续近JavaScript对象
      *
      * @param script the JavaScript to execute.
      * @param resultCallback A callback to be invoked when the script execution
@@ -946,6 +951,7 @@ public class WebView extends AbsoluteLayout
 
     /**
      * Saves the current view as a web archive.
+     * 将当前视图另web存档 书签功能
      *
      * @param filename the filename where the archive should be placed
      */
@@ -1008,6 +1014,7 @@ public class WebView extends AbsoluteLayout
 
     /**
      * Gets whether this WebView has a forward history item.
+     * 是否允许前进历史页面
      *
      * @return {@code true} if this WebView has a forward history item
      */
@@ -1027,6 +1034,7 @@ public class WebView extends AbsoluteLayout
     /**
      * Gets whether the page can go back or forward the given
      * number of steps.
+     * 判断当前页面是否可以返回或前进
      *
      * @param steps the negative or positive number of steps to move the
      *              history
@@ -1040,6 +1048,7 @@ public class WebView extends AbsoluteLayout
      * Goes to the history item that is the number of steps away from
      * the current item. Steps is negative if backward and positive
      * if forward.
+     * 调用页面前进或后退，后退为负数，前进为正数
      *
      * @param steps the number of steps to take back or forward in the back
      *              forward list
@@ -1050,6 +1059,7 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
+     * 获取此WebView中是否启用了私人浏览。
      * Gets whether private browsing is enabled in this WebView.
      */
     public boolean isPrivateBrowsingEnabled() {
@@ -1058,6 +1068,7 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
+     * Webview向上滑动一半
      * Scrolls the contents of this WebView up by half the view size.
      *
      * @param top {@code true} to jump to the top of the page
@@ -1069,6 +1080,7 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
+     * Webview向下滑动一半
      * Scrolls the contents of this WebView down by half the page size.
      *
      * @param bottom {@code true} to jump to bottom of page
@@ -1082,18 +1094,23 @@ public class WebView extends AbsoluteLayout
     /**
      * Posts a {@link VisualStateCallback}, which will be called when
      * the current state of the WebView is ready to be drawn.
+     * 提交一个{@link VisualStateCallback}，当webview的状态准备就绪可以准备绘制时
      *
      * <p>Because updates to the DOM are processed asynchronously, updates to the DOM may not
      * immediately be reflected visually by subsequent {@link WebView#onDraw} invocations. The
      * {@link VisualStateCallback} provides a mechanism to notify the caller when the contents of
      * the DOM at the current time are ready to be drawn the next time the {@link WebView}
      * draws.
+     * 因为对DOM的更新是异步处理的，所以对DOM的更新可能不会立即通过随后的{@link WebView}调用直观地反映出来。
+     * {@link VisualStateCallback}提供了一种机制，在{@link WebView}下次绘制DOM时，通知调用方当前DOM的内容准备就绪。
+     * 
      *
      * <p>The next draw after the callback completes is guaranteed to reflect all the updates to the
      * DOM up to the point at which the {@link VisualStateCallback} was posted, but it may also
      * contain updates applied after the callback was posted.
-     *
+     * 回调完成后的下一次绘制保证反映到发布{@link VisualStateCallback}时对DOM的所有更新，但它也可能包含在发布回调后应用的更新。
      * <p>The state of the DOM covered by this API includes the following:
+     * 此API涵盖的DOM状态包括：
      * <ul>
      * <li>primitive HTML elements (div, img, span, etc..)</li>
      * <li>images</li>
@@ -1109,22 +1126,37 @@ public class WebView extends AbsoluteLayout
      * <p>To guarantee that the {@link WebView} will successfully render the first frame
      * after the {@link VisualStateCallback#onComplete} method has been called a set of conditions
      * must be met:
+     *
+     * 要保证{@link WebView}在调用{@link VisualStateCallback#onComplete}方法后成功呈现第一帧，必须满足一组条件：
+     *
      * <ul>
      * <li>If the {@link WebView}'s visibility is set to {@link View#VISIBLE VISIBLE} then
      * the {@link WebView} must be attached to the view hierarchy.</li>
+     *
+     * 如果webview的可见性为可见那么Webview必须附加到view的层次结构当中
+     *
      * <li>If the {@link WebView}'s visibility is set to {@link View#INVISIBLE INVISIBLE}
      * then the {@link WebView} must be attached to the view hierarchy and must be made
      * {@link View#VISIBLE VISIBLE} from the {@link VisualStateCallback#onComplete} method.</li>
+     *
+     * 如果Webview的可见性为不可见 webview必须附加到view结构中，并且必须在VisualStateCallback调用onComplete方法中设置为可见
+     *
      * <li>If the {@link WebView}'s visibility is set to {@link View#GONE GONE} then the
      * {@link WebView} must be attached to the view hierarchy and its
      * {@link AbsoluteLayout.LayoutParams LayoutParams}'s width and height need to be set to fixed
      * values and must be made {@link View#VISIBLE VISIBLE} from the
      * {@link VisualStateCallback#onComplete} method.</li>
+     *
+     * 如果Webview的可见性为GONE，Webview必须附加到view的层次结构中
+     * 并且它的AbsoluteLayout.LayoutParams LayoutParams的宽和高需要设置为固定值
+     * 并且需要在VisualStateCallback#onComplete 方法后设置为可见。
      * </ul>
      *
      * <p>When using this API it is also recommended to enable pre-rasterization if the {@link
      * WebView} is off screen to avoid flickering. See {@link WebSettings#setOffscreenPreRaster} for
      * more details and do consider its caveats.
+     * 如果webview不在当前推荐启用预光栅化避免闪烁，
+     * 有关详细信息，请参见{@link WebSettings#setOffscreenPreRaster} 更多细节，并考虑其注意事项。
      *
      * @param requestId An id that will be returned in the callback to allow callers to match
      *                  requests with callbacks.
@@ -1136,10 +1168,12 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
+     * 清除Webview并设置为白色背景 如果MeasureSpec不是MeasureSpec.EXACTLY那么onMeasure方法将返回0，
      * Clears this WebView so that onDraw() will draw nothing but white background,
      * and onMeasure() will return 0 if MeasureSpec is not MeasureSpec.EXACTLY.
      * @deprecated Use WebView.loadUrl("about:blank") to reliably reset the view state
      *             and release page resources (including any running JavaScript).
+     * 使用WebView.loadUrl("about:blank") 来充值view的状态并释放页面资源（包含任何在运行的JavaScript）
      */
     @Deprecated
     public void clearView() {
@@ -1148,6 +1182,7 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
+     * 获得webview的图片快照。这个是整个webview视图的快照而不是显示区域，此图片为静态资源，不受以后展示的内容影响
      * Gets a new picture that captures the current contents of this WebView.
      * The picture is of the entire document being displayed, and is not
      * limited to the area currently displayed by this WebView. Also, the
@@ -1158,6 +1193,7 @@ public class WebView extends AbsoluteLayout
      * {@link android.os.Build.VERSION_CODES#HONEYCOMB} and
      * {@link android.os.Build.VERSION_CODES#ICE_CREAM_SANDWICH} inclusive, the
      * picture does not include fixed position elements or scrollable divs.
+     * 由于内部变化，在HONEYCOMB和ICE_CREAM_SANDWICH之间，图片不包括固定位置元素或可滚动的div。
      * <p>
      * Note that from {@link android.os.Build.VERSION_CODES#JELLY_BEAN_MR1} the returned picture
      * should only be drawn into bitmap-backed Canvas - using any other type of Canvas will involve
@@ -1186,6 +1222,7 @@ public class WebView extends AbsoluteLayout
 
     /**
      * Creates a PrintDocumentAdapter that provides the content of this WebView for printing.
+     * 创建一个PrintDocumentAdapter，提供此Web视图的内容以进行打印。
      *
      * The adapter works by converting the WebView contents to a PDF stream. The WebView cannot
      * be drawn during the conversion process - any such draws are undefined. It is recommended
@@ -1193,6 +1230,10 @@ public class WebView extends AbsoluteLayout
      * temporarily hide a visible WebView by using a custom PrintDocumentAdapter instance
      * wrapped around the object returned and observing the onStart and onFinish methods. See
      * {@link android.print.PrintDocumentAdapter} for more information.
+     * 适配器通过将WebView内容转换为PDF流来工作。在转换过程中不能绘制WebView——任何此类绘图都是未定义的。
+     * 建议使用专用的屏幕外WebView进行打印。如果需要，
+     * 应用程序可以通过使用围绕返回的对象的自定义PrintDocumentAdapter实例并观察onStart和onFinish方法来暂时隐藏可见的WebView。
+     * 参见{@linkandroid.print.PrintDocumentAdapter文件}更多信息。
      *
      * @param documentName  The user-facing name of the printed document. See
      *                      {@link android.print.PrintDocumentInfo}
